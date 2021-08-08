@@ -11,7 +11,28 @@ Some notes about the data: The data is imbalanced, most features are categorical
 3.	Create a process in the form of questionnaire to identify employees who wish to stay versus leave using CART model.
 
 
+**Decision Tree**
+![](https://github.com/ShivaRaghu/HR-Analytics.github.io/blob/main/rpart%20plot%20best%202.png)
 
+**Summarize findings to stakeholders:**
+Classification models (CART, RandomForest, LASSO, RIDGE) had identified following three variables as significant for the decision making of an employee whether to leave or work for the company.
+
+Variable 1: *Experience*
+Insight: Acc. To the RF model, experience is the most important predictor. Employees with less than one year, 1 to 5 year and 6 to 10 year experience tend to leave the job more often than others.
+
+Recommendation: This could be due to various reasons, and also people with more experience (11+ years) probably are good candidates to screen for when hiring.
+
+Variable 2: *Last.new.job
+(Difference in years between previous job and current job)*
+
+Insight: Lastnewjob is the second most important predictor for employee’s decision according to the random forest model. Someone who is in the current role for 4+ years will more likely to work for company than someone who is in current role for less than an year.
+
+Recommendation: As data suggests that employees who are in the company for less than an year or 1 or 2 years are more likely to leave as compared to someone who is in the company for 4+ years. Hence there is a need to try to understand those employees better with more surveys or more work life balance opportunities as new employees are generally people who are also starting family and trying to balance job with spouse/kids.
+
+Variable 3: *Discipline Major*
+Insight: Major Discipline is the 3rd major important predictor of employee’s decision
+
+Recommendation: The data suggests that employees with discipline major “STEM” are more likely to leave than other disciplines(Business, Humanities, Arts, Others). Therefore if an organization want to try to keep an employee then it might be a good idea to have a balance of candidates with other disciplines along with STEM.
 
 
 
