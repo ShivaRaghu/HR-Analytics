@@ -19,8 +19,9 @@ Classification models (CART, RandomForest, LASSO, RIDGE) had identified followin
 
 Variable 1: *Experience*
 Insight: Acc. To the RF model, experience is the most important predictor. Employees with less than one year, 1 to 5 year and 6 to 10 year experience tend to leave the job more often than others.
+![](https://github.com/ShivaRaghu/HR-Analytics.github.io/blob/main/experience.png)
 
-Recommendation: This could be due to various reasons, and also people with more experience (11+ years) probably are good candidates to screen for when hiring.
+Recommendation: This could be due to various reasons, and also people with more experience (11+ years) probably are good candidates to screen for when hiring for training that are more likely to stay and work for company.Plus there is a need to explore why people with less than one year or  1-5 year are more likely to leave.
 
 Variable 2: *Last.new.job
 (Difference in years between previous job and current job)*
