@@ -35,6 +35,10 @@ Insight: Major Discipline is the 3rd major important predictor of employee’s d
 
 Recommendation: The data suggests that employees with discipline major “STEM” are more likely to leave than other disciplines(Business, Humanities, Arts, Others). Therefore if an organization want to try to keep an employee then it might be a good idea to have a balance of candidates with other disciplines along with STEM.
 
+**Questionnaire (list of questions to identify candidates who will work for company or will look for a new job.**
+
+
+![image](https://user-images.githubusercontent.com/85574461/128640108-ffb43fb7-fd0d-42c8-86ea-1f6383923ef5.png)
 
 
 
