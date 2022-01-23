@@ -1,0 +1,228 @@
+---
+title: "Cardiovascular Disease (CVD) Health Data Analysis"
+author: "Shiva Raghuvanshi"
+
+output:
+  pdf_document: default
+  html_document: default
+---
+Goal: 
+- Perform exploratory data analysis on Cardiovascular diseases (CVD) dataset.
+- Plot decision tree with significant predictors.
+- Also,make predictions on the basis of decision tree.
+
+Introduction:Cardiovascular diseases (CVD) is one of the major cause of death worldwide. They can be prevented by addressing behavioral risk factors such as smoking, and unhealthy diet (high sodium intake). Preexisting conditions such as diabetes, hypertension also increases the risk of CVD. Our goal is to build machine learning models to help early detection and management of CVD.
+
+The data obtained from the following citation comprised of 13 variables/vitals recorded on 299 patients, with 105 women and 194 men:
+Study reference: Davide Chicco, Giuseppe Jurman: Machine learning can predict survival of patients with heart failure from serum creatinine and ejection fraction alone. BMC Medical Informatics and Decision Making 20, 16 (2020).
+
+DOI: https://doi.org/10.1186/s12911-020-1023-5
+
+Data Cleaning: After understanding CVD dataset, I loaded libraries and coersed following variables into factors. DEATH_EVENT, anaemia, diabetes, high_blood_pressure, sex,and smoking. After coersing, I explored the relationship of each variable with DEATH_EVENT variable to identify the strongly correlated ones. 
+
+For further analysis I changed the level names for diabetes, high_blood_pressure, smoking, and anaemia to No(0), Yes(1) . For clarity purposes, I renamed the sex variable levels to "Woman" (0) and 'Man"(1) and for DEATH_EVENT, I renamed levels to "Survived"(0), 'Dead'(1).  
+```{r setup}
+# load libraries
+library(tree)
+library(survival)
+library(rpart)
+library(ggplot2)
+library(rpart)
+library(rpart.plot)
+library(vcd)
+library(corrplot)
+library(RColorBrewer)
+
+heart_data <- read.csv("~/Desktop/TDA COURSES/TDAI_5620_SU21/R_code_TDAI5620SU21/heart_failure_clinical_records_dataset.csv")
+# coerce categorical variables into factors
+heart_data$anaemia <- as.factor(heart_data$anaemia)
+heart_data$diabetes <- as.factor(heart_data$diabetes)
+heart_data$high_blood_pressure <- as.factor(heart_data$high_blood_pressure)
+heart_data$sex <- as.factor(heart_data$sex)
+heart_data$smoking <- as.factor(heart_data$smoking)
+heart_data$DEATH_EVENT <- as.factor(heart_data$DEATH_EVENT)
+str(heart_data)
+
+# Rename the factor levels in data
+levels(heart_data$DEATH_EVENT) <- c('Survived', 'Dead')
+table(heart_data$DEATH_EVENT)
+levels(heart_data$anaemia) <- c('No', 'Yes')
+levels(heart_data$diabetes) <- c('No', 'Yes')
+levels(heart_data$high_blood_pressure) <- c('No', 'Yes')
+levels(heart_data$sex) <- c('Woman', 'Man')
+levels(heart_data$smoking) <- c('No', 'Yes')
+str(heart_data)
+```
+
+# Exploratory Data Analysis
+On performing exploratory analysis, I found 4 variables (ejection_fraction, serum_creatinine, time, and age) to be significantly different in 'survived' vs 'dead'. Please find the plot below:
+
+```{r, out.width="50%"}
+par(mfrow=c(2,2))
+# plot the distribution of Age by Death Event using boxplots
+ggplot(heart_data, 
+       aes(x = DEATH_EVENT, 
+           y = age,fill = DEATH_EVENT)) +
+  geom_boxplot() +
+  labs(title = "Age by Survived vs Dead patients",
+       x = "Death Event", y = "Age (years)")+ scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))
+
+# EJECTION FRACTION
+ggplot(heart_data, 
+       aes(x = DEATH_EVENT, 
+           y = ejection_fraction,fill = DEATH_EVENT)) +
+  geom_boxplot() +
+  labs(title = "Ejection Fraction(%) by death event",
+       x = "Death Event", y = "Ejection Fraction(%)")
+
+ggplot(heart_data, 
+       aes(x = DEATH_EVENT, 
+           y = log(serum_creatinine),fill = DEATH_EVENT)) +
+  geom_boxplot() +
+  labs(title = "Serum creatinine by death event",
+       x = "Death Event", y = "log(serum creatinine) mg/dL")
+# TIME
+ggplot(heart_data, 
+       aes(x = DEATH_EVENT, 
+           y = time, fill = DEATH_EVENT )) +
+  geom_boxplot() +
+  labs(title = "Follow-up period by death event",
+       x = "Death Event", y = "Follow-up period(days)")+ scale_fill_manual(values=c("#999999", "#E69F00", "#56B4E9"))
+
+```
+
+On exploratory analysis, I also observed that four variables were not strongly correlated with DEATH_EVENT and probably not worth measuring too are:- anaemia, creatinine_phosphokinase(CPK),serum_sodium, and platelets). Please find the plots below:
+
+```{r,out.width="50%"}
+mosaic(~ DEATH_EVENT+sex + anaemia, data = heart_data ,
+       highlighting = "DEATH_EVENT", highlighting_fill = c("lightblue", "pink"),
+       direction = c("v","h","v"))
+
+# CPK
+ggplot(heart_data, 
+       aes(x = DEATH_EVENT, 
+           y = log(creatinine_phosphokinase),fill = DEATH_EVENT)) +
+  geom_boxplot() +
+  labs(title = "CPK distribution by death event",
+       x = "Death Event", y = "log(CPK) mcg/L")+ scale_fill_brewer(palette="Dark2")
+
+# PLATELETS
+ggplot(heart_data, 
+       aes(x = DEATH_EVENT, 
+           y = log(platelets),fill = DEATH_EVENT)) +
+  geom_boxplot() +
+  labs(title = "Platelets in blood by death event",
+       x = "Death Event", y = "log(platelets) kiloplatelets/mL")+
+  scale_color_manual(values = c("#00AFBB", "#E7B800", "#FC4E07"))
+```
+
+# Explore correlation 
+Correlation among continuous variables:
+On observing the correlation among continuous variables in the data, I do not see any strongly correlated variables. There is some correlation between time & age as well as Serum Sodium and Serum Creatinine levels as shown below
+
+```{r,out.width="50%" }
+corr_heart <- cor(heart_data[, c(1,3,5,7,8,9,12)])
+corrplot(corr_heart, type="upper", order="hclust",
+         col=brewer.pal(n=8, name="RdYlBu"))
+```
+
+# Fit the Classification tree model
+
+There were 4 variables (sex, smoking, high_blood_pressure, and diabetes) which did not show any strong correlation with DEATH_EVENT however as they are predictors of behavioral risk hence I fitted several trees with and without them and looked at the misclassification error rate, to compare the fit of the tree models. 
+
+I also scaled the continuous variables - ejection_fraction and serum_creatinine and compared different tree models with scaled and unscaled variables and did not observe any difference of scaling on the tree output, hence I am using the unscaled variables (ejection_fraction, serum_creatinine) for the classification tree model. 
+
+According to the summary of the tree1 using rpart() argument, 'time' has the highest variable importance (63) followed by other features as serum_creatinine(16) and ejection_fraction(13), age(7) and (1) for both high_blood_pressure and smoking. 
+
+On using tree() argument, the decision tree1 again was divided primarily on "time" variable, followed by 'age' and 'ejection_fraction'. 
+
+Misclassification error rate(tree1): 0.1171 (11.71%) = 35 / 299
+
+terminal nodes = 8
+
+If we use only use vitals of the patient to plot classification tree2 and exclude the 'time' variable which is the follow-up period in days (as shown above), we observe that 'serum_creatinine' was the most important variable (variable importance = 46), followed by 'ejection_fraction' and 'age' which is consistent for both arguments tree() as well as rpart(). The misclassification error rate also increased to 0.1906 with 9 terminal nodes.
+
+Misclassification error rate(tree2): 0.1906 = 57 / 299, 
+terminal nodes = 9
+
+```{r, fig.align='center'}
+# Fit the Classification tree model with significant variables
+tree1 <- rpart(DEATH_EVENT ~ age+ high_blood_pressure +
+                 ejection_fraction+ serum_creatinine
+               +smoking +time ,data= heart_data, method = 'class')
+rpart.plot(tree1, main = "Classification tree (tree1)")
+#summary(tree1)
+```
+
+Keeping in mind misclassification error rate were less when we included 'time' variable hence using classification tree1 to predict the mortality for cardiovascular diseases.
+
+Out of curiosity, I wanted to observe the classification tree if use only two most significant predictors - 'time'(follow up period) & 'ejection_fraction %'(amount of blood pumped out of heart) and using minsize = 60, and mindev = 0.05.
+
+Plotting the 'survived' versus 'dead' patients data with ejection_fraction on x-axis and follow up time on y axis as these were the top most important variables according to the decision tree model with lowest classificiation error rate.
+
+```{r, fig.align='center'}
+# Plot tree for demonstration
+tree01 <- tree(DEATH_EVENT ~ ejection_fraction+time ,
+               data= heart_data, method = 'class',
+               minsize=60, mindev=.05)
+# plot(tree01)
+# text(tree01, cex = 0.75)
+# summary(tree01)
+# plot the partitions####
+eventcolors <- rep('black', length(heart_data$DEATH_EVENT))
+eventcolors[heart_data$DEATH_EVENT == 'Dead'] <- 'red'
+
+plot(heart_data$ejection_fraction, heart_data$time, 
+     col = eventcolors,
+     pch=20, 
+     xlab = "ejection_fraction",
+     ylab = "time")
+partition.tree(tree01, ordvars = c('ejection_fraction', 'time'),
+               add = TRUE, col = 'blue')
+legend("topright",pch=c(16,16),
+       col=c("red","black"),
+       legend=c("Dead","Survived"))
+```
+
+On plotting (based on tree with two most strongly correlated predictors- 'time', 'ejection_fraction') above, we can clearly observe that individuals with 'time' < 50 are under severe risk of mortality (red). There are some misclassified individuals but the general node has mostly red dots representing "dead'. Similarly, 'time' >= 70 + ejection fraction > 30 have low risk and classified as 'Survived'. 
+
+Goal: Make prediction for the risk of death event for the new patients. 
+
+Before using the newpatients data (test dataset) for prediction, I coersed the categorical variables into factors as done above for heart data.
+
+```{r}
+newpatients <- read.csv("~/Desktop/TDA COURSES/TDAI_5620_SU21/R_code_TDAI5620SU21/newpatients.csv")
+str(newpatients)
+#coerce categorical variables into factors
+newpatients$anaemia <- as.factor(newpatients$anaemia)
+newpatients$diabetes <- as.factor(newpatients$diabetes)
+newpatients$high_blood_pressure <- as.factor(newpatients$high_blood_pressure)
+newpatients$sex <- as.factor(newpatients$sex)
+newpatients$smoking <- as.factor(newpatients$smoking)
+
+levels(newpatients$high_blood_pressure) <- c('No', 'Yes')
+levels(newpatients$anaemia)             <- c('No', 'Yes')
+levels(newpatients$diabetes)            <- c('No', 'Yes')
+levels(newpatients$sex)                 <- c('Woman', 'Man')
+levels(newpatients$smoking)             <- c('No', 'Yes')
+
+str(newpatients)
+```
+
+Conclusion: On the basis of the prediction based on classification tree, there were 13 new patients in the dataset that are under high risk for mortality with probability for 'Dead' greater than 75% (as shown in table above). The prediction model will help the doctors modifying their strategy to treat these patients under high risk.
+
+```{r, out.width="50%", fig.align='center'}
+pred  <- predict(tree1, newpatients)
+pred1 <-predict(tree1, newpatients, type = 'class')
+new   <- as.data.frame(cbind(pred, newpatients))
+new_pred <- as.data.frame(cbind(pred1, newpatients))
+table(new_pred$pred1)
+
+x <- as.data.frame(new$Dead[new$Dead > 0.75])
+newdata <- new[ which(new$Dead > 0.75 
+                         & new$age > 50), ]
+x <- as.data.frame(newdata[, c(1,2,4,5, 9,16)])
+x
+```
+
+I am hoping the prediction model will help the doctors modifying their strategy to treat these patients under high risk.
